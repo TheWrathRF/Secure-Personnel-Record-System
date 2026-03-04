@@ -44,6 +44,9 @@ int main(void) {
             case 3:
                 printf("\nExiting. Goodbye!\n");
                 break;
+            default:
+                printf("\nInvalid choice. Please try again.\n");
+                break;
         }
 
     } while (choice != 3);
@@ -86,10 +89,15 @@ void addRecord(void) {
     xorEncryptDecrypt(p.password, XOR_KEY);
 
     fp = fopen(DATA_FILE, "ab");
+    if (fp == NULL) {
+        perror("Error: Could not open file for writing");
+        return;
+    }
+
     fwrite(&p, sizeof(struct Personnel), 1, fp);
     fclose(fp);
 
-    printf("Record saved successfully! (password encrypted)\n");
+    printf("Record saved successfully! (password is encrypted)\n");
 }
 
 
@@ -99,6 +107,11 @@ void viewRecords(void) {
     int count = 0;
 
     fp = fopen(DATA_FILE, "rb");
+    if (fp == NULL) {
+        perror("Error: Could not open file for reading");
+        printf("No records file found. Add a record first.\n");
+        return;
+    }
 
     printf("\n%-6s %-20s %-20s %-20s\n",
            "ID", "Name", "Department", "Password");
