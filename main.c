@@ -21,7 +21,8 @@ void xorEncryptDecrypt(char *data, char key);
 
 
 int main(void) {
-    int choice;
+    int choice = 0;        
+    char buffer[64];       
 
     do {
         printf("\n===================================\n");
@@ -32,9 +33,14 @@ int main(void) {
         printf("  3. Exit\n");
         printf("===================================\n");
         printf("  Enter your choice: ");
-        char buffer[64];
+
         fgets(buffer, sizeof(buffer), stdin);
-        sscanf(buffer, "%d", &choice); 
+
+        
+        if (sscanf(buffer, "%d", &choice) != 1) {
+            printf("\nInvalid input. Please enter a number.\n");
+            continue;   
+        }
 
         switch (choice) {
             case 1:
@@ -73,7 +79,7 @@ void addRecord(void) {
 
     printf("Enter ID       : ");
     scanf("%d", &p.id);
-    getchar(); 
+    getchar();
 
     printf("Enter Name     : ");
     fgets(p.name, sizeof(p.name), stdin);
@@ -87,7 +93,6 @@ void addRecord(void) {
     fgets(p.password, sizeof(p.password), stdin);
     p.password[strcspn(p.password, "\n")] = '\0';
 
-    
     xorEncryptDecrypt(p.password, XOR_KEY);
 
     fp = fopen(DATA_FILE, "ab");
@@ -120,7 +125,6 @@ void viewRecords(void) {
     printf("--------------------------------------------------------------\n");
 
     while (fread(&p, sizeof(struct Personnel), 1, fp) == 1) {
-        
         xorEncryptDecrypt(p.password, XOR_KEY);
 
         printf("%-6d %-20s %-20s %-20s\n",
