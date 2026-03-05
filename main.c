@@ -32,7 +32,9 @@ int main(void) {
         printf("  3. Exit\n");
         printf("===================================\n");
         printf("  Enter your choice: ");
-        scanf("%d", &choice);
+        char buffer[64];
+        fgets(buffer, sizeof(buffer), stdin);
+        sscanf(buffer, "%d", &choice); 
 
         switch (choice) {
             case 1:
