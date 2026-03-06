@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +16,8 @@ struct Personnel {
 
 void addRecord(void);
 void viewRecords(void);
-void xorEncryptDecrypt(char *data, char key);
+void xorEncryptDecrypt(char *data, char key, int len);
+void drainStdin(void);
 
 
 int main(void) {
@@ -33,10 +33,13 @@ int main(void) {
         printf("  3. Exit\n");
         printf("===================================\n");
         printf("  Enter your choice: ");
+        fflush(stdout);
 
-        fgets(buffer, sizeof(buffer), stdin);
+        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+            printf("\n\nEnd of input. Exiting.\n");
+            break;
+        }
 
-        
         if (sscanf(buffer, "%d", &choice) != 1) {
             printf("\nInvalid input. Please enter a number.\n");
             continue;   
@@ -63,9 +66,17 @@ int main(void) {
 }
 
 
-void xorEncryptDecrypt(char *data, char key) {
+
+void drainStdin(void) {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF)
+        ;
+}
+
+
+void xorEncryptDecrypt(char *data, char key, int len) {
     int i;
-    for (i = 0; data[i] != '\0'; i++) {
+    for (i = 0; i < len; i++) {
         data[i] = data[i] ^ key;
     }
 }
@@ -74,26 +85,77 @@ void xorEncryptDecrypt(char *data, char key) {
 void addRecord(void) {
     struct Personnel p;
     FILE *fp;
+    char line[64];
+
+    memset(&p, 0, sizeof(p));
 
     printf("\n--- Add New Record ---\n");
 
+
     printf("Enter ID       : ");
-    scanf("%d", &p.id);
-    getchar();
+    fflush(stdout);
+    if (fgets(line, sizeof(line), stdin) == NULL) {
+        printf("Input ended. Record not saved.\n");
+        return;
+    }
+    if (sscanf(line, "%d", &p.id) != 1 || p.id <= 0) {
+        printf("Invalid ID (must be a positive number). Record not saved.\n");
+        return;
+    }
+
 
     printf("Enter Name     : ");
-    fgets(p.name, sizeof(p.name), stdin);
+    fflush(stdout);
+    if (fgets(p.name, sizeof(p.name), stdin) == NULL) {
+        printf("Input ended. Record not saved.\n");
+        return;
+    }
+    /* If no newline was read, input was too long — drain the rest */
+    if (strchr(p.name, '\n') == NULL) {
+        drainStdin();
+    }
     p.name[strcspn(p.name, "\n")] = '\0';
 
+    if (strlen(p.name) == 0) {
+        printf("Name cannot be empty. Record not saved.\n");
+        return;
+    }
+
+
     printf("Enter Dept     : ");
-    fgets(p.dept, sizeof(p.dept), stdin);
+    fflush(stdout);
+    if (fgets(p.dept, sizeof(p.dept), stdin) == NULL) {
+        printf("Input ended. Record not saved.\n");
+        return;
+    }
+    if (strchr(p.dept, '\n') == NULL) {
+        drainStdin();
+    }
     p.dept[strcspn(p.dept, "\n")] = '\0';
 
+    if (strlen(p.dept) == 0) {
+        printf("Department cannot be empty. Record not saved.\n");
+        return;
+    }
+
+
     printf("Enter Password : ");
-    fgets(p.password, sizeof(p.password), stdin);
+    fflush(stdout);
+    if (fgets(p.password, sizeof(p.password), stdin) == NULL) {
+        printf("Input ended. Record not saved.\n");
+        return;
+    }
+    if (strchr(p.password, '\n') == NULL) {
+        drainStdin();
+    }
     p.password[strcspn(p.password, "\n")] = '\0';
 
-    xorEncryptDecrypt(p.password, XOR_KEY);
+    if (strlen(p.password) == 0) {
+        printf("Password cannot be empty. Record not saved.\n");
+        return;
+    }
+
+    xorEncryptDecrypt(p.password, XOR_KEY, sizeof(p.password));
 
     fp = fopen(DATA_FILE, "ab");
     if (fp == NULL) {
@@ -101,7 +163,11 @@ void addRecord(void) {
         return;
     }
 
-    fwrite(&p, sizeof(struct Personnel), 1, fp);
+    if (fwrite(&p, sizeof(struct Personnel), 1, fp) != 1) {
+        perror("Error: Could not write record to file");
+        fclose(fp);
+        return;
+    }
     fclose(fp);
 
     printf("Record saved successfully! (password is encrypted)\n");
@@ -115,7 +181,6 @@ void viewRecords(void) {
 
     fp = fopen(DATA_FILE, "rb");
     if (fp == NULL) {
-        perror("Error: Could not open file for reading");
         printf("No records file found. Add a record first.\n");
         return;
     }
@@ -125,7 +190,7 @@ void viewRecords(void) {
     printf("--------------------------------------------------------------\n");
 
     while (fread(&p, sizeof(struct Personnel), 1, fp) == 1) {
-        xorEncryptDecrypt(p.password, XOR_KEY);
+        xorEncryptDecrypt(p.password, XOR_KEY, sizeof(p.password));
 
         printf("%-6d %-20s %-20s %-20s\n",
                p.id, p.name, p.dept, p.password);
