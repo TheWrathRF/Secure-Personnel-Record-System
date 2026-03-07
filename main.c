@@ -110,7 +110,7 @@ void addRecord(void) {
         printf("Input ended. Record not saved.\n");
         return;
     }
-    /* If no newline was read, input was too long — drain the rest */
+    /* If no newline was read, input was too long — drain the rest ( Could be static inline later) */
     if (strchr(p.name, '\n') == NULL) {
         drainStdin();
     }
