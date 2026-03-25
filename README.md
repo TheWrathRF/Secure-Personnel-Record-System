@@ -1,109 +1,86 @@
-#  Secure Personnel Record System
+# Secure Personnel Record System
 
-A command-line personnel record management system,featuring binary file storage and XOR-based password encryption.
-
-
+A command-line personnel record management system written in C, designed with a  focus on data security and low-level memory management. *(Currently under active development)*
 
 ---
 
 ##  Features
 
-| Feature              | Description                                                    |
-|----------------------|----------------------------------------------------------------|
-| **Struct-based data** | Personnel records use a clean `struct` with ID, Name, Dept, and Password fields. |
-| **Binary File I/O**  | Records are persisted to `records.dat` using `fwrite()` / `fread()` for efficient storage. |
-| **XOR Encryption**   | Passwords are encrypted with a symmetric XOR cipher before being written to disk. |
-| **Error Handling**    | Graceful handling of invalid menu input and file-open failures. |
+| Feature | Description |
+|---|---|
+| **AES-256-CBC Encryption** | Sensitive data (Name, Department) is symmetrically encrypted before hitting the disk. |
+| **SHA-256 Password Hashing** | Passwords are NEVER stored in plaintext. They are one-way hashed, meaning they cannot be recovered, only verified. |
+| **Secure Memory Handling** | Sensitive buffers (like plaintext passwords) are scrubbed from stack memory using `memset` immediately after use. |
+| **Raw Binary File I/O** | Encrypted `struct` payloads are written directly to `records.dat` using fast, low-level `fread()` and `fwrite()` operations. |
 
 ---
 
 ##  Build & Run
 
 ### Prerequisites
-
-- C compiler (`gcc`, `clang`, or MSVC)
+You need a C compiler, CMake, and the OpenSSL development libraries installed on your system.
+* **Ubuntu/Debian:** `sudo apt install build-essential cmake libssl-dev`
+* **Windows:** Use MSYS2 (MinGW-w64) and install `mingw-w64-x86_64-openssl` and `cmake`.
 
 ### Compile
 
-```bash
-gcc -Wall -Wextra -o personnel main.c
-```
+    mkdir build
+    cd build
+    cmake ..
+    make
 
 ### Run
 
-```bash
-./personnel
-```
-
-On Windows (PowerShell):
-```powershell
-.\personnel.exe
-```
+    ./Secure_Personnel_Record_System
 
 ---
 
-##  Usage
+## 💻 Usage
 
-```
-===================================
-  Secure Personnel Record System
-===================================
-  1. Add Record
-  2. View Records
-  3. Exit
-===================================
-  Enter your choice:
-```
+    ===================================
+      Secure Personnel Record System
+         [AES-256 + SHA-256]
+    ===================================
+      1. Add Record
+      2. View Records
+      3. Verify Password
+      4. Exit
+    ===================================
+      Enter your choice:
 
 ### Adding a Record
 
-```
---- Add New Record ---
-Enter ID       : 101
-Enter Name     : Arda Başal
-Enter Dept     : Engineering
-Enter Password : s3cureP@ss
-Record saved successfully! (password encrypted)
-```
+    Enter ID       : 101
+    Enter Name     : Arda Basal
+    Enter Dept     : Engineering
+    Enter Password : super_secret_password
+    Record saved! (name/dept AES-encrypted, password SHA-256 hashed)
 
-### Viewing Records
+### Viewing Records & Password Verification
 
-```
-ID     Name                 Department           Password
---------------------------------------------------------------
-101    Arda Başal          Engineering          s3cureP@ss
-```
+    ID     Name                 Department           Password Hash (SHA-256)
+    --------------------------------------------------------------------------------------------
+    101    Arda Basal           Engineering          88d4266fd4e6338d13b845fcf289579d209c8978...
 
-> Passwords are stored **encrypted** in the binary file but displayed in **plain text** after decryption.
+    Enter Record ID: 101
+    Enter Password : super_secret_password
+    Password MATCHES for record 101.
+
+
 
 ---
 
-##  How XOR Encryption Works
+## 📂 Project Structure
 
-Each character of the password is XORed with a secret key (`'K'`):
-
-```
-Encrypt:   'H' ^ 'K' = 0x03  (garbled byte)
-Decrypt:   0x03 ^ 'K' = 'H'  (original restored)
-```
-
-Because XOR is its own inverse, the same function handles both encryption and decryption. 
+    Secure-Personnel-System/
+    ├── CMakeLists.txt  # Build configuration and OpenSSL linking
+    ├── main.c          # Core logic, menus, and file I/O
+    ├── crypto.h        # Crypto interface and key definitions
+    ├── crypto.c        # OpenSSL implementation (AES & SHA-256)
+    ├── records.dat     # Binary database (generated at runtime)
+    └── README.md       # This file
 
 ---
-
-##  Project Structure
-
-```
-Secure-Personnel-System/
-├── main.c          # All source code (struct, menu, CRUD, encryption)
-├── records.dat     # Binary data file (created at runtime)
-└── README.md       # This file
-```
-
-
-
-
-
 
 ## 📄 License
 
